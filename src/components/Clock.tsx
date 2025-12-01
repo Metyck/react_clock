@@ -13,11 +13,7 @@ export class Clock extends React.Component<Props, State> {
     today: new Date().toUTCString().slice(-12, -4),
   };
 
-  addIntervalHelper = (event?: MouseEvent) => {
-    if (event) {
-      event.preventDefault();
-    }
-
+  addIntervalHelper = () => {
     if (!this.clockValueTimerId) {
       this.clockValueTimerId = window.setInterval(() => {
         const initialTime = new Date().toUTCString().slice(-12, -4);
@@ -29,9 +25,7 @@ export class Clock extends React.Component<Props, State> {
     }
   };
 
-  removeIntervalHelper = (event: MouseEvent) => {
-    event.preventDefault();
-
+  removeIntervalHelper = () => {
     clearInterval(this.clockValueTimerId);
 
     this.clockValueTimerId = null;
@@ -41,21 +35,26 @@ export class Clock extends React.Component<Props, State> {
 
   componentDidMount(): void {
     this.addIntervalHelper();
-
-    document.addEventListener('contextmenu', this.removeIntervalHelper);
-    document.addEventListener('click', this.addIntervalHelper);
   }
 
   componentWillUnmount(): void {
-    clearInterval(this.clockValueTimerId);
+    this.removeIntervalHelper();
+  }
 
-    document.removeEventListener('click', this.addIntervalHelper);
-    document.removeEventListener('contextmenu', this.removeIntervalHelper);
+  componentDidUpdate(prevProps: Readonly<Props>): void {
+    if (prevProps.name !== this.props.name) {
+      const newClockName = this.props.name;
+      const oldName = prevProps.name;
+
+      // eslint-disable-next-line no-console
+      console.warn(`Renamed from ${oldName} to ${newClockName}`);
+    }
   }
 
   render() {
     return (
       <div className="Clock">
+        <strong className="Clock__name">{this.props.name}</strong>
         {' time is '}
 
         <span className="Clock__time">{this.state.today}</span>

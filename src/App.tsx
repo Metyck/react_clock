@@ -9,7 +9,6 @@ function getRandomName(): string {
 }
 
 type State = {
-  clockPrevName: string;
   clockName: string;
   hasClock: boolean;
 };
@@ -17,7 +16,6 @@ type State = {
 export class App extends React.Component<State> {
   state: State = {
     clockName: 'Clock-0',
-    clockPrevName: 'Clock-0',
     hasClock: true,
   };
 
@@ -26,20 +24,10 @@ export class App extends React.Component<State> {
   handleRightClick = (event: MouseEvent) => {
     event.preventDefault();
     this.setState({ hasClock: false });
-    clearInterval(this.clockNameTimerId);
-    this.clockNameTimerId = null;
   };
 
   handleLeftClick = () => {
     this.setState({ hasClock: true });
-
-    if (!this.clockNameTimerId) {
-      this.clockNameTimerId = window.setInterval(() => {
-        const newClockName = getRandomName();
-
-        this.setState({ clockName: newClockName });
-      }, 3300);
-    }
   };
 
   componentDidMount(): void {
@@ -60,14 +48,24 @@ export class App extends React.Component<State> {
     document.removeEventListener('click', this.handleLeftClick);
   }
 
-  componentDidUpdate(): void {
-    const oldName = this.state.clockPrevName;
-    const newClockName = this.state.clockName;
+  // const newClockName = this.state.clockName;
 
-    if (this.state.clockName !== this.state.clockPrevName) {
-      // eslint-disable-next-line no-console
-      console.warn(`Renamed from ${oldName} to ${newClockName}`);
-      this.setState({ clockPrevName: newClockName });
+  // if (this.state.clockName !== this.state.clockPrevName) {
+  //   this.setState({ clockPrevName: newClockName });
+  // }
+
+  componentDidUpdate(prevState: Readonly<State>): void {
+    if (!prevState.hasClock && this.state.hasClock) {
+      if (!this.clockNameTimerId) {
+        this.clockNameTimerId = window.setInterval(() => {
+          const newClockName = getRandomName();
+
+          this.setState({ clockName: newClockName });
+        }, 3300);
+      }
+    } else if (prevState.hasClock && !this.state.hasClock) {
+      clearInterval(this.clockNameTimerId);
+      this.clockNameTimerId = null;
     }
   }
 
@@ -76,12 +74,7 @@ export class App extends React.Component<State> {
       <div className="App">
         <h1>React clock</h1>
 
-        {this.state.hasClock && (
-          <>
-            <strong className="Clock__name">{this.state.clockName}</strong>
-            <Clock name={this.state.clockName} />
-          </>
-        )}
+        {this.state.hasClock && <Clock name={this.state.clockName} />}
       </div>
     );
   }
