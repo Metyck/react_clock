@@ -9,27 +9,28 @@ function getRandomName(): string {
 }
 
 type State = {
-  today: string;
   clockPrevName: string;
   clockName: string;
   hasClock: boolean;
-  isJustAppeared: boolean;
 };
 
 export class App extends React.Component<State> {
   state: State = {
-    today: new Date().toUTCString().slice(-12, -4),
     clockName: 'Clock-0',
     clockPrevName: 'Clock-0',
     hasClock: true,
-    isJustAppeared: true,
   };
 
-  addIntervalHelper = (event?: MouseEvent) => {
-    if (event) {
-      event.preventDefault();
-    }
+  clockNameTimerId: number | null = null;
 
+  handleRightClick = (event: MouseEvent) => {
+    event.preventDefault();
+    this.setState({ hasClock: false });
+    clearInterval(this.clockNameTimerId);
+    this.clockNameTimerId = null;
+  };
+
+  handleLeftClick = () => {
     this.setState({ hasClock: true });
 
     if (!this.clockNameTimerId) {
@@ -39,47 +40,24 @@ export class App extends React.Component<State> {
         this.setState({ clockName: newClockName });
       }, 3300);
     }
-
-    if (!this.clockValueTimerId) {
-      this.clockValueTimerId = window.setInterval(() => {
-        const initialTime = new Date().toUTCString().slice(-12, -4);
-
-        this.setState({ today: initialTime });
-        // eslint-disable-next-line no-console
-        console.log(initialTime);
-      }, 1000);
-
-      this.setState({ isJustAppeared: false });
-    }
   };
-
-  removeIntervalHelper = (event: MouseEvent) => {
-    event.preventDefault();
-    this.setState({ hasClock: false });
-    clearInterval(this.clockValueTimerId);
-    clearInterval(this.clockNameTimerId);
-    this.clockNameTimerId = null;
-    this.clockValueTimerId = null;
-  };
-
-  clockValueTimerId: number | null | undefined;
-
-  clockNameTimerId: number | null | undefined;
 
   componentDidMount(): void {
-    // if (this.state.isFirstlyApeared) {
-    // }
-    this.addIntervalHelper();
+    document.addEventListener('click', this.handleLeftClick);
+    document.addEventListener('contextmenu', this.handleRightClick);
 
-    document.addEventListener('contextmenu', this.removeIntervalHelper);
-    document.addEventListener('click', this.addIntervalHelper);
+    if (!this.clockNameTimerId) {
+      this.clockNameTimerId = window.setInterval(() => {
+        const newClockName = getRandomName();
+
+        this.setState({ clockName: newClockName });
+      }, 3300);
+    }
   }
 
   componentWillUnmount(): void {
-    clearInterval(this.clockValueTimerId);
-
-    document.removeEventListener('click', this.addIntervalHelper);
-    document.removeEventListener('contextmenu', this.removeIntervalHelper);
+    document.removeEventListener('contextmenu', this.handleRightClick);
+    document.removeEventListener('click', this.handleLeftClick);
   }
 
   componentDidUpdate(): void {
@@ -99,7 +77,10 @@ export class App extends React.Component<State> {
         <h1>React clock</h1>
 
         {this.state.hasClock && (
-          <Clock name={this.state.clockName} time={this.state.today} />
+          <>
+            <strong className="Clock__name">{this.state.clockName}</strong>
+            <Clock name={this.state.clockName} />
+          </>
         )}
       </div>
     );
